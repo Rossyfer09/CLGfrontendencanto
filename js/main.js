@@ -126,7 +126,6 @@ function getrandomfac () {
     const datadogs = document.getElementById('datadogs');
     const Pdata = document.getElementById('Pdata')
     
-    
     datadogs.addEventListener('click', getdatadogs);
     function getdatadogs() {
       fetch("https://nodeprojectbackend.onrender.com/dog/alldogs")
@@ -137,7 +136,7 @@ function getrandomfac () {
                let table = document.createElement('table');
                table.className = 'dogtable';
                let tableHeader = table.insertRow(-1);
-               let headers = ['Name', 'life_expectancy', 'max_height', 'max_weight','trainability', 'energy', 'barking'];
+               let headers = ['_id','Name', 'life_expectancy', 'max_height', 'max_weight','energy', 'barking'];
                for (let i = 0; i < headers.length; i++) {
                    let th = document.createElement('th');
                    th.innerHTML = headers[i];
@@ -146,6 +145,7 @@ function getrandomfac () {
                 // create table rows
                for (let i = 0; i < data.length; i++) {
                    let tr = table.insertRow(-1);
+                   tr.setAttribute('data-id', data[i]._id);// set _id attribute to the table row element
                    let tabCell1 = tr.insertCell(-1);
                    let tabCell2 = tr.insertCell(-1);
                    let tabCell3 = tr.insertCell(-1);
@@ -154,6 +154,7 @@ function getrandomfac () {
                    let tabCell6 = tr.insertCell(-1);
                    let tabCell7 = tr.insertCell(-1);
                    let tabCell8 = tr.insertCell(-1); // new cell for delete button
+                   let tabCell9 = tr.insertCell(-1); // new cell for update button
 
                    let deleteBtn = document.createElement('button');
                    deleteBtn.innerHTML = 'Delete';
@@ -163,15 +164,18 @@ function getrandomfac () {
 
                     tabCell8.appendChild(deleteBtn);
 
-                    tabCell1.innerHTML = data[i].Name
-                    tabCell2.innerHTML = data[i].life_expectancy
-                    tabCell3.innerHTML = data[i].max_height
-                    tabCell4.innerHTML = data[i].max_weight
-                    tabCell5.innerHTML = data[i].trainability
+                    tabCell1.innerHTML = data[i]._id
+                    tabCell2.innerHTML = data[i].Name
+                    tabCell3.innerHTML = data[i].life_expectancy
+                    tabCell4.innerHTML = data[i].max_height
+                    tabCell5.innerHTML = data[i].max_weight
                     tabCell6.innerHTML = data[i].energy
                     tabCell7.innerHTML = data[i].barking
+
+
                     tabCell8.innerHTML = '<button onclick="deleteDog(\'' + data[i]._id + '\')">Delete</button>'; // add delete button with onclick event
-                    
+                    tabCell9.innerHTML = '<button onclick="updateDog(\'' + data[i]._id + '\', ' + JSON.stringify(data[i]) + ')">Update</button>';  // add update button with onclick event
+                  
                   }
 
                   Pdata.innerHTML = '';
@@ -180,21 +184,222 @@ function getrandomfac () {
                 })
                 .catch(err => {
                   console.error('Error retrieving dog data:', err);
-                });
+                })
 
-              };  
-                  // // function to send DELETE request to server with dog ID             
-                  function deleteDog(id) {
-                    fetch('https://nodeprojectbackend.onrender.com/dog/delete/' + id, {
-                      method: 'DELETE'
+              }
+                   
+            
+
+                // // // function to send an Update request to server with dog ID    
+                        
+                function updateDog(id, data) {
+                  // get the table row element for the dog record
+                  const row = document.querySelector(`tr[data-id="${id}"]`);
+                
+                  // create input fields for each data attribute and set their values to the existing data
+                  const nameInput = document.createElement('input');
+                  nameInput.value = data.Name;
+                  const lifeExpectancyInput = document.createElement('input');
+                  lifeExpectancyInput.value = data.life_expectancy;
+                  const maxHeightInput = document.createElement('input');
+                  maxHeightInput.value = data.max_height;
+                  const maxWeightInput = document.createElement('input');
+                  maxWeightInput.value = data.max_weight;
+                  const energyInput = document.createElement('input');
+                  energyInput.value = data.energy;
+                  const barkingInput = document.createElement('input');
+                  barkingInput.value = data.barking;
+                
+                  // replace the table cells with the input fields
+                  const nameCell = row.cells[1];
+                  const lifeExpectancyCell = row.cells[2];
+                  const maxHeightCell = row.cells[3];
+                  const maxWeightCell = row.cells[4];
+                  const energyCell = row.cells[5];
+                  const barkingCell = row.cells[6];
+                  nameCell.innerHTML = '';
+                  nameCell.appendChild(nameInput);
+                  lifeExpectancyCell.innerHTML = '';
+                  lifeExpectancyCell.appendChild(lifeExpectancyInput);
+                  maxHeightCell.innerHTML = '';
+                  maxHeightCell.appendChild(maxHeightInput);
+                  maxWeightCell.innerHTML = '';
+                  maxWeightCell.appendChild(maxWeightInput);
+                  energyCell.innerHTML = '';
+                  energyCell.appendChild(energyInput);
+                  barkingCell.innerHTML = '';
+                  barkingCell.appendChild(barkingInput);
+                
+                  // add a "Save" button to the row
+                  const saveBtn = document.createElement('button');
+                  saveBtn.innerHTML = 'Save';
+                  saveBtn.onclick = function() {
+                    // send the updated data to the server
+                    const updatedData = {
+                      Name: nameInput.value,
+                      life_expectancy: lifeExpectancyInput.value,
+                      max_height: maxHeightInput.value,
+                      max_weight: maxWeightInput.value,
+                      energy: energyInput.value,
+                      barking: barkingInput.value,
+                    };
+                    fetch(`https://nodeprojectbackend.onrender.com/dog/update/${id}`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify(updatedData),
                     })
                     .then(res => res.json())
                     .then(data => {
-                      console.log(data);
-                      // Reload the table after deleting the dog
-                      getdatadogs();
+                      // update the table row with the new data
+                      nameCell.innerHTML = data.Name;
+                      lifeExpectancyCell.innerHTML = data.life_expectancy;
+                      maxHeightCell.innerHTML = data.max_height;
+                      maxWeightCell.innerHTML = data.max_weight;
+                      energyCell.innerHTML = data.energy;
+                      barkingCell.innerHTML = data.barking;
+                      // remove the "Send" button
+                      row.cells[7].innerHTML = '<button onclick="deleteDog(\'' + id + '\')">Delete</button>';
                     })
                     .catch(err => {
-                      console.error('Error deleting dog:', err);
-                });
-              }  
+                      console.error('Error updating dog data:', err);
+                    });
+                  };
+
+                  // replace the "Update" button with the "Send" button
+                  row.cells[8].innerHTML = '';
+                  row.cells[8].appendChild(sendBtn);
+                }
+
+                // // function to send DELETE request to server with dog ID             
+                function deleteDog(id) {
+                  fetch('https://nodeprojectbackend.onrender.com/dog/delete/' + id, {
+                    method: 'DELETE'
+                  })
+                  .then(res => res.json())
+                  .then(data => {
+                    console.log(data);
+                    // Reload the table after deleting the dog
+                    getdatadogs();
+                  })
+                  .catch(err => {
+                    console.error('Error deleting dog:', err);
+              });
+            } 
+          //      // // function to insertrecord request to server    
+
+          //      function insertRecord() {
+          //       fetch('https://nodeprojectbackend.onrender.com/dog/', {
+          //         method: 'PUT'
+          //       })
+          //       .then(res => res.json())
+          //       .then(data => {
+          //         console.log(data);
+          //         // Reload the table after deleting the dog
+          //         getdatadogs();
+          //       })
+          //       .catch(err => {
+          //         console.error('Error deleting dog:', err);
+          //   });
+          // }  
+          function showPopupForm() {
+            // create the form element
+            var form = document.createElement('form');
+            form.id = 'new-dog-form';
+          
+            // create the name input field
+            var nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.name = 'name';
+            nameInput.placeholder = 'Name';
+            form.appendChild(nameInput);
+          
+            // create the life expectancy input field
+            var lifeExpectancyInput = document.createElement('input');
+            lifeExpectancyInput.type = 'text';
+            lifeExpectancyInput.name = 'life_expectancy';
+            lifeExpectancyInput.placeholder = 'Life Expectancy';
+            form.appendChild(lifeExpectancyInput);
+          
+            // create the max height input field
+            var maxHeightInput = document.createElement('input');
+            maxHeightInput.type = 'text';
+            maxHeightInput.name = 'max_height';
+            maxHeightInput.placeholder = 'Max Height';
+            form.appendChild(maxHeightInput);
+          
+            // create the max weight input field
+            var maxWeightInput = document.createElement('input');
+            maxWeightInput.type = 'text';
+            maxWeightInput.name = 'max_weight';
+            maxWeightInput.placeholder = 'Max Weight';
+            form.appendChild(maxWeightInput);
+          
+            // create the energy input field
+            var energyInput = document.createElement('input');
+            energyInput.type = 'text';
+            energyInput.name = 'energy';
+            energyInput.placeholder = 'Energy';
+            form.appendChild(energyInput);
+          
+            // create the barking input field
+            var barkingInput = document.createElement('input');
+            barkingInput.type = 'text';
+            barkingInput.name = 'barking';
+            barkingInput.placeholder = 'Barking';
+            form.appendChild(barkingInput);
+          
+            // create the submit button
+            var submitButton = document.createElement('input');
+            submitButton.type = 'submit';
+            submitButton.value = 'Submit';
+            form.appendChild(submitButton);
+          
+            // add an event listener to the form to submit the data to the API when submitted
+            form.addEventListener('submit', function(event) {
+              event.preventDefault();
+          
+              // get the form data
+              var formData = new FormData(form);
+          
+              // make the API request to insert the new record
+              fetch('https://nodeprojectbackend.onrender.com/dog', {
+                method: 'POST',
+                body: formData
+              })
+              .then(function(response) {
+                if (response.ok) {
+                  // show a success message and close the popup
+                  alert('New dog added successfully!');
+                  closePopup();
+                } else {
+                  // show an error message
+                  alert('Error adding new dog');
+                }
+              })
+              .catch(function(error) {
+                // show an error message
+                alert('Error adding new dog');
+              });
+            });
+          
+            // create the overlay element
+            var overlay = document.createElement('div');
+            overlay.id = 'overlay';
+          
+            // add the form to the overlay
+            overlay.appendChild(form);
+          
+            // add the overlay to the document
+            document.body.appendChild(overlay);
+          
+            // function to close the popup
+            function closePopup() {
+              overlay.remove();
+            }
+          }
+          
+          // add an event listener to the "New Dog" button to show the popup form when clicked
+          document.getElementById('newdog').addEventListener('click', showPopupForm);
+          
